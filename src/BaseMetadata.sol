@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts/access/Ownable2StepUpgradeable.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Initializable } from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import { IOwnable } from "./lib/interfaces/IOwnable.sol";
 import { MetadataBuilder } from "micro-onchain-metadata-utils/MetadataBuilder.sol";
 import { MetadataJSONKeys } from "micro-onchain-metadata-utils/MetadataJSONKeys.sol";
 import { IBaseMetadata } from "./IBaseMetadata.sol";
 
-abstract contract BaseMetadata is IBaseMetadata, Initializable, Ownable2StepUpgradeable {
+abstract contract BaseMetadata is IBaseMetadata, Initializable {
+    ///                                                          ///
+    ///                          STRUCTS                         ///
+    ///                                                          ///
+
     /// @custom:storage-location erc7201:nounsbuilder.storage.BaseMetadata
     struct BaseMetadataStorage {
         address _token;
@@ -18,14 +22,39 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, Ownable2StepUpgr
         AdditionalTokenProperty[] _additionalTokenProperties;
     }
 
+    ///                                                          ///
+    ///                          CONSTANTS                       ///
+    ///                                                          ///
+
     // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.BaseMetadata")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant BaseMetadataStorageLocation = 0x80bb2b638cc20bc4d0a60d66940f3ab4a00c1d7b313497ca82fb0b4ab0079300;
+
+    ///                                                          ///
+    ///                          STORAGE                         ///
+    ///                                                          ///
 
     function _getBaseMetadataStorage() private pure returns (BaseMetadataStorage storage $) {
         assembly {
             $.slot := BaseMetadataStorageLocation
         }
     }
+
+    ///                                                          ///
+    ///                          MODIFIERS                       ///
+    ///                                                          ///
+
+    /// @notice Checks the token owner if the current action is allowed
+    modifier onlyOwner() {
+        if (owner() != msg.sender) {
+            revert IOwnable.ONLY_OWNER();
+        }
+
+        _;
+    }
+
+    ///                                                          ///
+    ///                          INITIALIZER                     ///
+    ///                                                          ///
 
     function __BaseMetadata_init(
         address token_,
@@ -41,6 +70,10 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, Ownable2StepUpgr
         $._contractImage = contractImage_;
     }
 
+    ///                                                          ///
+    ///                     PROPERTIES                           ///
+    ///                                                          ///
+
     /// @notice Updates the additional token properties associated with the metadata.
     /// @dev Be careful to not conflict with already used keys such as "name", "description", "properties",
     function setAdditionalTokenProperties(AdditionalTokenProperty[] memory _additionalTokenProperties) external onlyOwner {
@@ -54,54 +87,89 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, Ownable2StepUpgr
         emit AdditionalTokenPropertiesSet(_additionalTokenProperties);
     }
 
-    /// @notice The properties and query string for a generated token
-    /// @param _tokenId The ERC-721 token id
-    function getAttributes(uint256 _tokenId) public view returns (string memory resultAttributes, string memory queryString) {
+    ///                                                          ///
+    ///                            URIs                          ///
+    ///                                                          ///
+
+    /// @notice Internal getter function for token name
+    function _name() internal view returns (string memory) {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return IERC721Metadata($._token).name();
+    }
 
-        // Get the token's query string
-        queryString = string.concat(
-            "?contractAddress=",
-            Strings.toHexString(uint256(uint160(address(this))), 20),
-            "&tokenId=",
-            Strings.toString(_tokenId)
-        );
+    /// @notice The contract URI
+    function contractURI() external view override returns (string memory) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4);
 
-        // Get the token's generated attributes
-        uint16[16] memory tokenAttributes = $._attributes[_tokenId];
+        items[0] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyName, value: _name(), quote: true });
+        items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: $._description, quote: true });
+        items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: $._contractImage, quote: true });
+        items[3] = MetadataBuilder.JSONItem({ key: "external_url", value: $._projectURI, quote: true });
 
-        // Cache the number of properties when the token was minted
-        uint256 numProperties = tokenAttributes[0];
+        return MetadataBuilder.generateEncodedJSON(items);
+    }
 
-        // Ensure the given token was minted
-        if (numProperties == 0) revert TOKEN_NOT_MINTED(_tokenId);
+    ///                                                          ///
+    ///                       METADATA SETTINGS                  ///
+    ///                                                          ///
 
-        // Get an array to store the token's generated attribtues
-        MetadataBuilder.JSONItem[] memory arrayAttributesItems = new MetadataBuilder.JSONItem[](numProperties);
+    /// @notice The associated ERC-721 token
+    function token() external view returns (address) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return $._token;
+    }
 
-        unchecked {
-            // For each of the token's properties:
-            for (uint256 i = 0; i < numProperties; ++i) {
-                // Get its name and list of associated items
-                Property memory property = properties[i];
+    /// @notice The contract image
+    function contractImage() external view returns (string memory) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return $._contractImage;
+    }
 
-                // Get the randomly generated index of the item to select for this token
-                uint256 attribute = tokenAttributes[i + 1];
+    /// @notice The collection description
+    function description() external view returns (string memory) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return $._description;
+    }
 
-                // Get the associated item data
-                Item memory item = property.items[attribute];
+    /// @notice The collection description
+    function projectURI() external view returns (string memory) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return $._projectURI;
+    }
 
-                // Store the encoded attributes and query string
-                MetadataBuilder.JSONItem memory itemJSON = arrayAttributesItems[i];
+    /// @notice Get the owner of the metadata (here delegated to the token owner)
+    function owner() public view returns (address) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        return IOwnable($._token).owner();
+    }
 
-                itemJSON.key = property.name;
-                itemJSON.value = item.name;
-                itemJSON.quote = true;
+    ///                                                          ///
+    ///                       UPDATE SETTINGS                    ///
+    ///                                                          ///
 
-                queryString = string.concat(queryString, "&images=", _getItemImage(item, property.name));
-            }
+    /// @notice Updates the contract image
+    /// @param _newContractImage The new contract image
+    function updateContractImage(string memory _newContractImage) external onlyOwner {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        emit ContractImageUpdated($._contractImage, _newContractImage);
 
-            resultAttributes = MetadataBuilder.generateJSON(arrayAttributesItems);
-        }
+        $._contractImage = _newContractImage;
+    }
+
+    /// @notice Updates the collection description
+    /// @param _newDescription The new description
+    function updateDescription(string memory _newDescription) external onlyOwner {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        emit DescriptionUpdated($._description, _newDescription);
+
+        $._description = _newDescription;
+    }
+
+    function updateProjectURI(string memory _newProjectURI) external onlyOwner {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        emit WebsiteURIUpdated($._projectURI, _newProjectURI);
+
+        $._projectURI = _newProjectURI;
     }
 }

@@ -1,3 +1,4 @@
 forge-std/=lib/forge-std/src/
-@openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/
+@openzeppelin-upgradeable/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 micro-onchain-metadata-utils/=lib/micro-onchain-metadata-utils/src/
