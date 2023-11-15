@@ -5,6 +5,8 @@ import { BaseMetadata } from "../BaseMetadata.sol";
 import { IPropertyIPFS } from "./IPropertyIPFS.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { MetadataBuilder } from "micro-onchain-metadata-utils/MetadataBuilder.sol";
+import { MetadataJSONKeys } from "micro-onchain-metadata-utils/MetadataJSONKeys.sol";
+import { UriEncode } from "sol-uriencode/src/UriEncode.sol";
 
 contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
     ///                                                          ///
@@ -213,7 +215,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
         PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
 
         // Ensure the caller is the token contract
-        if (msg.sender != $._settings.token) revert ONLY_TOKEN();
+        if (msg.sender != token()) revert ONLY_TOKEN();
 
         // Compute some randomness for the token id
         uint256 seed = _generateSeed(_tokenId);
@@ -306,11 +308,73 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
 
     /// @dev Encodes the reference URI of an item
     function _getItemImage(Item memory _item, string memory _propertyName) private view returns (string memory) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+
         return
             UriEncode.uriEncode(
                 string(
-                    abi.encodePacked(ipfsData[_item.referenceSlot].baseUri, _propertyName, "/", _item.name, ipfsData[_item.referenceSlot].extension)
+                    abi.encodePacked(
+                        $._ipfsData[_item.referenceSlot].baseUri,
+                        _propertyName,
+                        "/",
+                        _item.name,
+                        $._ipfsData[_item.referenceSlot].extension
+                    )
                 )
             );
+    }
+
+    ///                                                          ///
+    ///                            URIs                          ///
+    ///                                                          ///
+
+    /// @notice The token URI
+    /// @param _tokenId The ERC-721 token id
+    function tokenURI(uint256 _tokenId) external view returns (string memory) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        BaseMetadataStorage storage $base = _getBaseMetadataStorage();
+
+        (string memory _attributes, string memory queryString) = getAttributes(_tokenId);
+
+        MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4 + $base._additionalTokenProperties.length);
+
+        items[0] = MetadataBuilder.JSONItem({
+            key: MetadataJSONKeys.keyName,
+            value: string.concat(_name(), " #", Strings.toString(_tokenId)),
+            quote: true
+        });
+        items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: $base._description, quote: true });
+        items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: string.concat($._rendererBase, queryString), quote: true });
+        items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyProperties, value: _attributes, quote: false });
+
+        for (uint256 i = 0; i < $base._additionalTokenProperties.length; i++) {
+            AdditionalTokenProperty memory tokenProperties = $base._additionalTokenProperties[i];
+            items[4 + i] = MetadataBuilder.JSONItem({ key: tokenProperties.key, value: tokenProperties.value, quote: tokenProperties.quote });
+        }
+
+        return MetadataBuilder.generateEncodedJSON(items);
+    }
+
+    ///                                                          ///
+    ///                       METADATA SETTINGS                  ///
+    ///                                                          ///
+
+    /// @notice The renderer base
+    function rendererBase() external view returns (string memory) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        return $._rendererBase;
+    }
+
+    ///                                                          ///
+    ///                       UPDATE SETTINGS                    ///
+    ///                                                          ///
+
+    /// @notice Updates the renderer base
+    /// @param _newRendererBase The new renderer base
+    function updateRendererBase(string memory _newRendererBase) external onlyOwner {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        emit RendererBaseUpdated($._rendererBase, _newRendererBase);
+
+        $._rendererBase = _newRendererBase;
     }
 }

@@ -33,7 +33,7 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable {
     ///                          STORAGE                         ///
     ///                                                          ///
 
-    function _getBaseMetadataStorage() private pure returns (BaseMetadataStorage storage $) {
+    function _getBaseMetadataStorage() internal pure returns (BaseMetadataStorage storage $) {
         assembly {
             $.slot := BaseMetadataStorageLocation
         }
@@ -115,7 +115,7 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable {
     ///                                                          ///
 
     /// @notice The associated ERC-721 token
-    function token() external view returns (address) {
+    function token() public view returns (address) {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
         return $._token;
     }
