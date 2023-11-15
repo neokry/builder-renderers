@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.20;
 
 /// @title IBaseMetadata
 /// @author Rohan Kulkarni
@@ -18,6 +18,9 @@ interface IBaseMetadata {
     /// @notice Emitted when the collection uri is updated
     event WebsiteURIUpdated(string lastURI, string newURI);
 
+    /// @notice Additional token properties have been set
+    event AdditionalTokenPropertiesSet(AdditionalTokenProperty[] _additionalJsonProperties);
+
     ///                                                          ///
     ///                            ERRORS                        ///
     ///                                                          ///
@@ -30,6 +33,16 @@ interface IBaseMetadata {
 
     /// @dev Reverts if querying attributes for a token not minted
     error TOKEN_NOT_MINTED(uint256 tokenId);
+
+    ///                                                          ///
+    ///                            STRUCTS                       ///
+    ///                                                          ///
+
+    struct AdditionalTokenProperty {
+        string key;
+        string value;
+        bool quote;
+    }
 
     ///                                                          ///
     ///                           FUNCTIONS                      ///
