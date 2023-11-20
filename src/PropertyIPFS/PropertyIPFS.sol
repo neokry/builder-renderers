@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { BaseMetadata } from "../BaseMetadata.sol";
-import { IPropertyIPFS } from "./IPropertyIPFS.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { UUPSUpgradeable } from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import { MetadataBuilder } from "micro-onchain-metadata-utils/MetadataBuilder.sol";
 import { MetadataJSONKeys } from "micro-onchain-metadata-utils/MetadataJSONKeys.sol";
 import { UriEncode } from "sol-uriencode/src/UriEncode.sol";
 
-contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
+import { IManager } from "../lib/interfaces/IManager.sol";
+import { IPropertyIPFS } from "./IPropertyIPFS.sol";
+import { BaseMetadata } from "../BaseMetadata.sol";
+
+contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
     ///                                                          ///
     ///                          STRUCTS                         ///
     ///                                                          ///
@@ -26,7 +30,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
     ///                                                          ///
 
     // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.PropertyIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant PropertyIPFSStorageLocation = 0x80bb2b638cc20bc4d0a60d66940f3ab4a00c1d7b313497ca82fb0b4ab0079300;
+    bytes32 private constant PropertyIPFSStorageLocation = 0x6e86adc91987cfd0c2727f2061f4e6022e5e9212736e682f4eb1f6949f6a7b00;
 
     ///                                                          ///
     ///                          IMMUTABLES                      ///
@@ -50,7 +54,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
     ///                                                          ///
 
     /// @param _manager The contract upgrade manager address
-    constructor(address _manager) payable initializer {
+    constructor(address _manager) payable {
         manager = _manager;
     }
 
@@ -58,7 +62,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
     ///                          INITILIZER                      ///
     ///                                                          ///
 
-    function initialize(bytes calldata _initStrings, address _token) external override onlyInitializing {
+    function initialize(bytes calldata _initStrings, address _token) external override initializer {
         // Ensure the caller is the contract manager
         if (msg.sender != address(manager)) {
             revert ONLY_MANAGER();
@@ -217,11 +221,14 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
         // Ensure the caller is the token contract
         if (msg.sender != token()) revert ONLY_TOKEN();
 
-        // Compute some randomness for the token id
-        uint256 seed = _generateSeed(_tokenId);
-
         // Get the pointer to store generated attributes
         uint16[16] storage tokenAttributes = $._attributes[_tokenId];
+
+        // If the attributes are already set from _setAttributes they don't need to be generated
+        if (tokenAttributes[0] != 0) return true;
+
+        // Compute some randomness for the token id
+        uint256 seed = _generateSeed(_tokenId);
 
         // Cache the total number of properties available
         uint256 numProperties = $._properties.length;
@@ -301,6 +308,19 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
         }
     }
 
+    /// @notice Gets the raw attributes for a token
+    /// @param _tokenId The ERC-721 token id
+    function getRawAttributes(uint256 _tokenId) external view returns (uint16[16] memory attributes) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        return $._attributes[_tokenId];
+    }
+
+    /// @dev Sets the attributes for a token
+    function _setAttributes(uint256 _tokenId, uint16[16] calldata _attributes) internal {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        $._attributes[_tokenId] = _attributes;
+    }
+
     /// @dev Generates a psuedo-random seed for a token id
     function _generateSeed(uint256 _tokenId) private view returns (uint256) {
         return uint256(keccak256(abi.encode(_tokenId, blockhash(block.number), block.coinbase, block.timestamp)));
@@ -332,23 +352,24 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
     /// @param _tokenId The ERC-721 token id
     function tokenURI(uint256 _tokenId) external view returns (string memory) {
         PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
-        BaseMetadataStorage storage $base = _getBaseMetadataStorage();
+
+        AdditionalTokenProperty[] memory additionalTokenProperties = getAdditionalTokenProperties();
 
         (string memory _attributes, string memory queryString) = getAttributes(_tokenId);
 
-        MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4 + $base._additionalTokenProperties.length);
+        MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4 + additionalTokenProperties.length);
 
         items[0] = MetadataBuilder.JSONItem({
             key: MetadataJSONKeys.keyName,
             value: string.concat(_name(), " #", Strings.toString(_tokenId)),
             quote: true
         });
-        items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: $base._description, quote: true });
+        items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: description(), quote: true });
         items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: string.concat($._rendererBase, queryString), quote: true });
         items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyProperties, value: _attributes, quote: false });
 
-        for (uint256 i = 0; i < $base._additionalTokenProperties.length; i++) {
-            AdditionalTokenProperty memory tokenProperties = $base._additionalTokenProperties[i];
+        for (uint256 i = 0; i < additionalTokenProperties.length; i++) {
+            AdditionalTokenProperty memory tokenProperties = additionalTokenProperties[i];
             items[4 + i] = MetadataBuilder.JSONItem({ key: tokenProperties.key, value: tokenProperties.value, quote: tokenProperties.quote });
         }
 
@@ -376,5 +397,9 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata {
         emit RendererBaseUpdated($._rendererBase, _newRendererBase);
 
         $._rendererBase = _newRendererBase;
+    }
+
+    function _authorizeUpgrade(address _impl) internal virtual override {
+        if (!IManager(manager).isRegisteredUpgrade(ERC1967Utils.getImplementation(), _impl)) revert INVALID_UPGRADE(_impl);
     }
 }

@@ -26,14 +26,14 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable {
     ///                          CONSTANTS                       ///
     ///                                                          ///
 
-    // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.BaseMetadata")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant BaseMetadataStorageLocation = 0x80bb2b638cc20bc4d0a60d66940f3ab4a00c1d7b313497ca82fb0b4ab0079300;
+    // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.BaseMetadataRenderer")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant BaseMetadataStorageLocation = 0x2fa7648083c65a0ac045c9c0db3cad5a2f7ea16eb0ee0e12b4ab33de41044700;
 
     ///                                                          ///
     ///                          STORAGE                         ///
     ///                                                          ///
 
-    function _getBaseMetadataStorage() internal pure returns (BaseMetadataStorage storage $) {
+    function _getBaseMetadataStorage() private pure returns (BaseMetadataStorage storage $) {
         assembly {
             $.slot := BaseMetadataStorageLocation
         }
@@ -87,6 +87,15 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable {
         emit AdditionalTokenPropertiesSet(_additionalTokenProperties);
     }
 
+    function getAdditionalTokenProperties() public view returns (AdditionalTokenProperty[] memory _additionalTokenProperties) {
+        BaseMetadataStorage storage $ = _getBaseMetadataStorage();
+        _additionalTokenProperties = new AdditionalTokenProperty[]($._additionalTokenProperties.length);
+
+        for (uint256 i = 0; i < $._additionalTokenProperties.length; i++) {
+            _additionalTokenProperties[i] = $._additionalTokenProperties[i];
+        }
+    }
+
     ///                                                          ///
     ///                            URIs                          ///
     ///                                                          ///
@@ -121,19 +130,19 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable {
     }
 
     /// @notice The contract image
-    function contractImage() external view returns (string memory) {
+    function contractImage() public view returns (string memory) {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
         return $._contractImage;
     }
 
     /// @notice The collection description
-    function description() external view returns (string memory) {
+    function description() public view returns (string memory) {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
         return $._description;
     }
 
     /// @notice The collection description
-    function projectURI() external view returns (string memory) {
+    function projectURI() public view returns (string memory) {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
         return $._projectURI;
     }

@@ -50,6 +50,10 @@ interface IPropertyIPFS {
     ///
     error TOO_MANY_PROPERTIES();
 
+    /// @dev Reverts if an implementation is an invalid upgrade
+    /// @param impl The address of the invalid implementation
+    error INVALID_UPGRADE(address impl);
+
     ///                                                          ///
     ///                           FUNCTIONS                      ///
     ///                                                          ///
@@ -70,6 +74,10 @@ interface IPropertyIPFS {
     /// @notice The properties and query string for a generated token
     /// @param tokenId The ERC-721 token id
     function getAttributes(uint256 tokenId) external view returns (string memory resultAttributes, string memory queryString);
+
+    /// @notice Gets the raw attributes for a token
+    /// @param _tokenId The ERC-721 token id
+    function getRawAttributes(uint256 _tokenId) external view returns (uint16[16] memory attributes);
 
     /// @notice The renderer base
     function rendererBase() external view returns (string memory);
