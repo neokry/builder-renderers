@@ -78,4 +78,8 @@ interface IBaseMetadata {
 
     /// @notice Get metadata owner address
     function owner() external view returns (address);
+
+    /// @notice If the contract implements an interface
+    /// @param _interfaceId The interface id
+    function supportsInterface(bytes4 _interfaceId) external pure returns (bool);
 }

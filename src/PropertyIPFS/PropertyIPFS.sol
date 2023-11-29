@@ -386,6 +386,12 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
         return $._rendererBase;
     }
 
+    /// @notice If the contract implements an interface
+    /// @param _interfaceId The interface id
+    function supportsInterface(bytes4 _interfaceId) public pure virtual override returns (bool) {
+        return super.supportsInterface(_interfaceId) || _interfaceId == type(IPropertyIPFS).interfaceId;
+    }
+
     ///                                                          ///
     ///                       UPDATE SETTINGS                    ///
     ///                                                          ///

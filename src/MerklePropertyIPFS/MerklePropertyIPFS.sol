@@ -89,4 +89,10 @@ contract MerklePropertyIPFS is IMerklePropertyIPFS, PropertyIPFS {
         // Set the attributes
         _setAttributes(_params.tokenId, _params.attributes);
     }
+
+    /// @notice If the contract implements an interface
+    /// @param _interfaceId The interface id
+    function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
+        return super.supportsInterface(_interfaceId) || _interfaceId == type(IMerklePropertyIPFS).interfaceId;
+    }
 }
