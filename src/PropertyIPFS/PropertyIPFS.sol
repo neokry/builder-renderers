@@ -257,6 +257,14 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
         return true;
     }
 
+    /// @notice The atribute at a given token id and attribute id
+    /// @param _tokenId The ERC-721 token id
+    /// @param _attributeId The attribute id
+    function attributes(uint256 _tokenId, uint256 _attributeId) public view returns (uint16) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        return $._attributes[_tokenId][_attributeId];
+    }
+
     /// @notice The properties and query string for a generated token
     /// @param _tokenId The ERC-721 token id
     function getAttributes(uint256 _tokenId) public view returns (string memory resultAttributes, string memory queryString) {
@@ -310,9 +318,23 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
 
     /// @notice Gets the raw attributes for a token
     /// @param _tokenId The ERC-721 token id
-    function getRawAttributes(uint256 _tokenId) external view returns (uint16[16] memory attributes) {
+    function getRawAttributes(uint256 _tokenId) external view returns (uint16[16] memory) {
         PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
         return $._attributes[_tokenId];
+    }
+
+    /// @notice The IPFS data at a given id
+    /// @param _ipfsDataId The IPFS data id
+    function ipfsData(uint256 _ipfsDataId) external view returns (IPFSGroup memory) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        return $._ipfsData[_ipfsDataId];
+    }
+
+    /// @notice The properties at a given id
+    /// @param _propertyId The property id
+    function properties(uint256 _propertyId) external view returns (Property memory) {
+        PropertyIPFSStorage storage $ = _getPropertyIPFSStorage();
+        return $._properties[_propertyId];
     }
 
     /// @dev Sets the attributes for a token

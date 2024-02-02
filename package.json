@@ -1,0 +1,13 @@
+{
+  "name": "builder-renderers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy:merkle": "source .env && forge script ./script/DeployMerkleProperty.s.sol:DeployMerkleProperty --private-key $PRIVATE_KEY --rpc-url $RPC_URL --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY",
+    "deploy:zora": "source .env && forge script ./script/DeployMerkleProperty.s.sol:DeployMerkleProperty --private-key $PRIVATE_KEY --rpc-url $RPC_URL --broadcast --verify --verifier blockscout --verifier-url https://explorer.zora.energy/api?  -vvvv"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

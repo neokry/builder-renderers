@@ -7,8 +7,9 @@ import { IOwnable } from "./lib/interfaces/IOwnable.sol";
 import { MetadataBuilder } from "micro-onchain-metadata-utils/MetadataBuilder.sol";
 import { MetadataJSONKeys } from "micro-onchain-metadata-utils/MetadataJSONKeys.sol";
 import { IBaseMetadata } from "./IBaseMetadata.sol";
+import { VersionedContract } from "./VersionedContract.sol";
 
-abstract contract BaseMetadata is IBaseMetadata, Initializable {
+abstract contract BaseMetadata is IBaseMetadata, Initializable, VersionedContract {
     ///                                                          ///
     ///                          STRUCTS                         ///
     ///                                                          ///
