@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
@@ -427,7 +427,20 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
         $._rendererBase = _newRendererBase;
     }
 
-    function _authorizeUpgrade(address _impl) internal virtual override {
+    ///                                                          ///
+    ///                        METADATA UPGRADE                  ///
+    ///                                                          ///
+
+    /// @notice Upgrades to an implementation
+    /// @param _newImpl The new implementation address
+    function upgradeTo(address _newImpl) external {
+        upgradeToAndCall(_newImpl, "");
+    }
+
+        /// @notice Ensures the caller is authorized to upgrade the contract to a valid implementation
+    /// @dev This function is called in UUPS `upgradeTo` & `upgradeToAndCall`
+    /// @param _impl The address of the new implementation
+    function _authorizeUpgrade(address _impl) internal virtual override onlyOwner {
         if (!IManager(manager).isRegisteredUpgrade(ERC1967Utils.getImplementation(), _impl)) revert INVALID_UPGRADE(_impl);
     }
 }

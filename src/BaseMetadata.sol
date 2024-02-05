@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import { Initializable } from "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -183,7 +183,9 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, VersionedContrac
 
         $._description = _newDescription;
     }
-
+    
+    /// @notice Updates the project URI
+    /// @param _newProjectURI The new project URI
     function updateProjectURI(string memory _newProjectURI) external onlyOwner {
         BaseMetadataStorage storage $ = _getBaseMetadataStorage();
         emit WebsiteURIUpdated($._projectURI, _newProjectURI);
