@@ -12,7 +12,11 @@ import { IManager } from "../lib/interfaces/IManager.sol";
 import { ISequentialIPFS } from "./ISequentialIPFS.sol";
 import { BaseMetadata } from "../BaseMetadata.sol";
 
-contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeable {
+/// @title Sequential IPFS Metadata Renderer
+/// @author Neokry
+/// @notice A metadata renderer that uses a list of IPFS URIs for the token metadata
+/// @custom:repo github.com/neokry/builder-renderers
+abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeable {
     ///                                                          ///
     ///                          STRUCTS                         ///
     ///                                                          ///

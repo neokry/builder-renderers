@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+/// @title IPropertyIPFS
+/// @author Neokry
+/// @notice The external functions and errors for the property IPFS metadata renderer
+/// @custom:repo github.com/neokry/builder-renderers
 interface IPropertyIPFS {
     ///                                                          ///
     ///                            STRUCTS                       ///

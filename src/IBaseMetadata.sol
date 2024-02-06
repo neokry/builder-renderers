@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 /// @title IBaseMetadata
-/// @author Rohan Kulkarni
+/// @author Neokry
 /// @notice The external Base Metadata errors and functions
 interface IBaseMetadata {
     ///                                                          ///

@@ -5,6 +5,10 @@ import { IMerklePropertyIPFS } from "./IMerklePropertyIPFS.sol";
 import { PropertyIPFS } from "../PropertyIPFS/PropertyIPFS.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+/// @title Merkle Property IPFS Metadata Renderer
+/// @author Neokry
+/// @notice A property metadata renderer that allows setting attributes using a merkle proof
+/// @custom:repo github.com/neokry/builder-renderers
 contract MerklePropertyIPFS is IMerklePropertyIPFS, PropertyIPFS {
     ///                                                          ///
     ///                          STRUCTS                         ///

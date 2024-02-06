@@ -12,6 +12,10 @@ import { IManager } from "../lib/interfaces/IManager.sol";
 import { IPropertyIPFS } from "./IPropertyIPFS.sol";
 import { BaseMetadata } from "../BaseMetadata.sol";
 
+/// @title Property IPFS Metadata Renderer
+/// @author Neokry
+/// @notice A metadata renderer that generates token attributes from a set of properties and items
+/// @custom:repo github.com/neokry/builder-renderers
 contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
     ///                                                          ///
     ///                          STRUCTS                         ///

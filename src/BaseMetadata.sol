@@ -9,6 +9,10 @@ import { MetadataJSONKeys } from "micro-onchain-metadata-utils/MetadataJSONKeys.
 import { IBaseMetadata } from "./IBaseMetadata.sol";
 import { VersionedContract } from "./VersionedContract.sol";
 
+/// @title Base Metadata
+/// @author Neokry
+/// @notice The base contract for a DAO's artwork generator and renderer
+/// @custom:repo github.com/neokry/builder-renderers
 abstract contract BaseMetadata is IBaseMetadata, Initializable, VersionedContract {
     ///                                                          ///
     ///                          STRUCTS                         ///
