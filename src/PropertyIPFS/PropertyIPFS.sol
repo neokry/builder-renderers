@@ -62,6 +62,9 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
     ///                          INITILIZER                      ///
     ///                                                          ///
 
+    /// @notice Initializes a DAO's token metadata renderer
+    /// @param _initStrings The encoded token and metadata initialization strings
+    /// @param _token The ERC-721 token address
     function initialize(bytes calldata _initStrings, address _token) external override initializer {
         // Ensure the caller is the contract manager
         if (msg.sender != address(manager)) {
@@ -437,7 +440,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
         upgradeToAndCall(_newImpl, "");
     }
 
-        /// @notice Ensures the caller is authorized to upgrade the contract to a valid implementation
+    /// @notice Ensures the caller is authorized to upgrade the contract to a valid implementation
     /// @dev This function is called in UUPS `upgradeTo` & `upgradeToAndCall`
     /// @param _impl The address of the new implementation
     function _authorizeUpgrade(address _impl) internal virtual override onlyOwner {

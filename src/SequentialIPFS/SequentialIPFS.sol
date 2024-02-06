@@ -29,7 +29,7 @@ contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeable {
     // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.SequentialIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant SequentialIPFSStorageLocation = 0x6e86adc91987cfd0c2727f2061f4e6022e5e9212736e682f4eb1f6949f6a7b00;
 
-        ///                                                          ///
+    ///                                                          ///
     ///                          IMMUTABLES                      ///
     ///                                                          ///
 
@@ -79,7 +79,7 @@ contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeable {
     }
 
     function tokenURI(uint256 _tokenId) external view override returns (string memory) {
-        SequentialIPFSStorage memory $ =  _getSequentialIPFSStorage();
+        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
         AdditionalTokenProperty[] memory additionalTokenProperties = getAdditionalTokenProperties();
 
         MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4 + additionalTokenProperties.length);

@@ -36,6 +36,7 @@ contract MerklePropertyIPFS is IMerklePropertyIPFS, PropertyIPFS {
     ///                          CONSTRUCTOR                     ///
     ///                                                          ///
 
+    /// @param _manager The contract upgrade manager address
     constructor(address _manager) PropertyIPFS(_manager) {}
 
     ///                                                          ///

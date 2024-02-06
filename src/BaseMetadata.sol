@@ -57,6 +57,11 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, VersionedContrac
     ///                          INITIALIZER                     ///
     ///                                                          ///
 
+    /// @notice Initializes the contract
+    /// @param token_ The token contract
+    /// @param projectURI_ The project URI
+    /// @param description_ The collection description
+    /// @param contractImage_ The contract image
     function __BaseMetadata_init(
         address token_,
         string memory projectURI_,
@@ -183,7 +188,7 @@ abstract contract BaseMetadata is IBaseMetadata, Initializable, VersionedContrac
 
         $._description = _newDescription;
     }
-    
+
     /// @notice Updates the project URI
     /// @param _newProjectURI The new project URI
     function updateProjectURI(string memory _newProjectURI) external onlyOwner {

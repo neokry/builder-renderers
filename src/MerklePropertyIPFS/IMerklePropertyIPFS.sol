@@ -6,6 +6,10 @@ interface IMerklePropertyIPFS {
     ///                          STRUCTS                         ///
     ///                                                          ///
 
+    /// @notice The parameters to use for setting attributes
+    /// @param tokenId The token ID
+    /// @param attributes The attributes to set
+    /// @param proof The merkle proof
     struct SetAttributeParams {
         uint256 tokenId;
         uint16[16] attributes;
@@ -17,7 +21,10 @@ interface IMerklePropertyIPFS {
     ///                                                          ///
 
     /// @notice Invalid merkle proof
-    error INVALID_MERKLE_PROOF(uint256, bytes32[], bytes32);
+    /// @param tokenId The token ID
+    /// @param proof The merkle proof
+    /// @param merkleRoot The merkle root
+    error INVALID_MERKLE_PROOF(uint256 tokenId, bytes32[] proof, bytes32 merkleRoot);
 
     ///                                                          ///
     ///                          FUNCTIONS                       ///
