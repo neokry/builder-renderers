@@ -23,6 +23,7 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
 
     /// @custom:storage-location erc7201:nounsbuilder.storage.SequentialIPFSRenderer
     struct SequentialIPFSStorage {
+        MetadataItem _fallbackMetadataItem;
         MetadataItem[] _metadataItems;
     }
 
@@ -78,13 +79,71 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
         __BaseMetadata_init(_token, _projectURI, _description, _contractImage);
     }
 
+    ///                                                          ///
+    ///                        METADATA ITEMS                    ///
+    ///                                                          ///
+
+    /// @notice Get the current metadata items
+    /// @return The metadata items
+    function getMetadataItems() external pure returns (MetadataItem[] memory) {
+        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
+        return $._metadataItems;
+    }
+
+    /// @notice Get the current fallback metadata item
+    /// @return The fallback metadata item
+    function getFallbackMetadataItem() external pure returns (MetadataItem memory) {
+        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
+        return $._fallbackMetadataItem;
+    }
+
+    /// @notice Add a new metadata item
+    /// @param _metadataItem The metadata item to add
+    function _addMetadataItem(MetadataItem calldata _metadataItem) internal {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        $._metadataItems.push(_metadataItem);
+    }
+
+    /// @notice Set a metadata item at a specific index
+    /// @param _index The index to set the metadata item at
+    function _setMetadataItem(uint256 _index, MetadataItem calldata _metadataItem) internal {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        $._metadataItems[_index] = _metadataItem;
+    }
+
+    /// @notice Sets the fallback metadata item
+    /// @param _metadataItem The metadata item to set as the fallback
+    function _setFallbackMetadataItem(MetadataItem calldata _metadataItem) internal {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        $._fallbackMetadataItem = _metadataItem;
+    }
+
+    function _getTokenMetadataOrFallback(uint256 _tokenId) internal pure returns (MetadataItem memory) {
+        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
+        if (_tokenId < $._metadataItems.length) {
+            return $._metadataItems[_tokenId];
+        }
+        return $._fallbackMetadataItem;
+    }
+
+    ///                                                          ///
+    ///                     ATTRIBUTE GENERATION                 ///
+    ///                                                          ///
+
+    /// @notice Callback for when a token is minted
     function onMinted(uint256) external pure override returns (bool) {
         return true;
     }
 
+    ///                                                          ///
+    ///                            URIs                          ///
+    ///                                                          ///
+
+    /// @notice Get the token URI
+    /// @param _tokenId The token ID
     function tokenURI(uint256 _tokenId) external view override returns (string memory) {
-        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
         AdditionalTokenProperty[] memory additionalTokenProperties = getAdditionalTokenProperties();
+        MetadataItem memory tokenMetadataItem = _getTokenMetadataOrFallback(_tokenId);
 
         MetadataBuilder.JSONItem[] memory items = new MetadataBuilder.JSONItem[](4 + additionalTokenProperties.length);
 
@@ -94,16 +153,27 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
             quote: true
         });
         items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: description(), quote: true });
-        items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: $._metadataItems[_tokenId].imageURI, quote: true });
-        items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyAnimationURL, value: $._metadataItems[_tokenId].contentURI, quote: false });
+        items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: tokenMetadataItem.imageURI, quote: true });
 
+        bool hasContentURI = keccak256(abi.encode(tokenMetadataItem.contentURI)) != keccak256("");
+
+        // Ignore the content URI if it is empty
+        if (hasContentURI) {
+            items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyAnimationURL, value: tokenMetadataItem.contentURI, quote: false });
+        }
+
+        uint256 baseIndex = hasContentURI ? 4 : 3;
         for (uint256 i = 0; i < additionalTokenProperties.length; i++) {
             AdditionalTokenProperty memory tokenProperties = additionalTokenProperties[i];
-            items[4 + i] = MetadataBuilder.JSONItem({ key: tokenProperties.key, value: tokenProperties.value, quote: tokenProperties.quote });
+            items[baseIndex + i] = MetadataBuilder.JSONItem({ key: tokenProperties.key, value: tokenProperties.value, quote: tokenProperties.quote });
         }
 
         return MetadataBuilder.generateEncodedJSON(items);
     }
+
+    ///                                                          ///
+    ///                        METADATA UPGRADE                  ///
+    ///                                                          ///
 
     function _authorizeUpgrade(address _impl) internal virtual override onlyOwner {
         if (!IManager(manager).isRegisteredUpgrade(ERC1967Utils.getImplementation(), _impl)) revert INVALID_UPGRADE(_impl);
