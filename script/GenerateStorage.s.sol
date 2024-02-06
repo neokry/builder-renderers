@@ -18,16 +18,12 @@ contract GenerateScript is Script {
             keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.MerklePropertyIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff))
         );
 
-        uint256 tokenId = 1;
+        console2.log("SequentialIPFSRenderer:");
+        console2.logBytes32(keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.SequentialIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff)));
 
-        uint16[16] memory values;
-        values[0] = 5;
-        values[1] = 8;
-        values[2] = 4;
-        values[3] = 2;
-        values[4] = 1;
-        values[5] = 0;
-
-        console2.logBytes(abi.encode(tokenId, values));
+        console2.log("CreatorSequentialIPFSRenderer:");
+        console2.logBytes32(
+            keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.CreatorSequentialIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff))
+        );
     }
 }

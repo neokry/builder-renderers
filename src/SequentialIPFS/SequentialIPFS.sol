@@ -24,7 +24,7 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
     /// @custom:storage-location erc7201:nounsbuilder.storage.SequentialIPFSRenderer
     struct SequentialIPFSStorage {
         MetadataItem _fallbackMetadataItem;
-        MetadataItem[] _metadataItems;
+        mapping(uint256 index => MetadataItem item) _metadataItems;
     }
 
     ///                                                          ///
@@ -32,7 +32,7 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
     ///                                                          ///
 
     // keccak256(abi.encode(uint256(keccak256("nounsbuilder.storage.SequentialIPFSRenderer")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SequentialIPFSStorageLocation = 0x6e86adc91987cfd0c2727f2061f4e6022e5e9212736e682f4eb1f6949f6a7b00;
+    bytes32 private constant SequentialIPFSStorageLocation = 0x05c4f2ac24bde1c6d3668207bfbaacf34d42aefcc22fb39b8e3b0412e188dd00;
 
     ///                                                          ///
     ///                          IMMUTABLES                      ///
@@ -83,47 +83,56 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
     ///                        METADATA ITEMS                    ///
     ///                                                          ///
 
-    /// @notice Get the current metadata items
-    /// @return The metadata items
-    function getMetadataItems() external pure returns (MetadataItem[] memory) {
-        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
-        return $._metadataItems;
+    /// @notice Get a metadata item at a specific index
+    /// @param _index The index to use
+    /// @return The metadata item
+    function getMetadataItem(uint256 _index) external view returns (MetadataItem memory) {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        return $._metadataItems[_index];
     }
 
     /// @notice Get the current fallback metadata item
     /// @return The fallback metadata item
-    function getFallbackMetadataItem() external pure returns (MetadataItem memory) {
-        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
+    function getFallbackMetadataItem() external view returns (MetadataItem memory) {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
         return $._fallbackMetadataItem;
     }
 
-    /// @notice Add a new metadata item
-    /// @param _metadataItem The metadata item to add
-    function _addMetadataItem(MetadataItem calldata _metadataItem) internal {
+    /// @notice Delete a metadata item at a specific index
+    /// @param _index The index to use
+    function _deleteMetadataItem(uint256 _index) internal {
         SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
-        $._metadataItems.push(_metadataItem);
+        delete $._metadataItems[_index];
     }
 
     /// @notice Set a metadata item at a specific index
-    /// @param _index The index to set the metadata item at
-    function _setMetadataItem(uint256 _index, MetadataItem calldata _metadataItem) internal {
+    /// @param _index The index to use
+    /// @param _imageURI The metadata image URI
+    /// @param _contentURI The metadata content URI
+    function _setMetadataItem(uint256 _index, string calldata _imageURI, string calldata _contentURI) internal {
         SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
-        $._metadataItems[_index] = _metadataItem;
+        MetadataItem storage item = $._metadataItems[_index];
+        item.imageURI = _imageURI;
+        item.contentURI = _contentURI;
+
+        if (!item.active) {
+            item.active = true;
+        }
     }
 
     /// @notice Sets the fallback metadata item
-    /// @param _metadataItem The metadata item to set as the fallback
-    function _setFallbackMetadataItem(MetadataItem calldata _metadataItem) internal {
+    /// @param _imageURI The metadata image URI
+    /// @param _contentURI The metadata content URI
+    function _setFallbackMetadataItem(string calldata _imageURI, string calldata _contentURI) internal {
         SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
-        $._fallbackMetadataItem = _metadataItem;
+        $._fallbackMetadataItem.imageURI = _imageURI;
+        $._fallbackMetadataItem.contentURI = _contentURI;
     }
 
-    function _getTokenMetadataOrFallback(uint256 _tokenId) internal pure returns (MetadataItem memory) {
-        SequentialIPFSStorage memory $ = _getSequentialIPFSStorage();
-        if (_tokenId < $._metadataItems.length) {
-            return $._metadataItems[_tokenId];
-        }
-        return $._fallbackMetadataItem;
+    function _getTokenMetadataOrFallback(uint256 _tokenId) internal view returns (MetadataItem memory) {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        MetadataItem memory item = $._metadataItems[_tokenId];
+        return item.active ? item : $._fallbackMetadataItem;
     }
 
     ///                                                          ///
@@ -155,11 +164,13 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
         items[1] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyDescription, value: description(), quote: true });
         items[2] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyImage, value: tokenMetadataItem.imageURI, quote: true });
 
-        bool hasContentURI = keccak256(abi.encode(tokenMetadataItem.contentURI)) != keccak256("");
+        // keccak256(abi.encode(tokenMetadataItem.contentURI)) != keccak256("")
+        bool hasContentURI = keccak256(abi.encode(tokenMetadataItem.contentURI)) !=
+            bytes32(0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470);
 
-        // Ignore the content URI if it is empty
+        // Add the content URI if it exists
         if (hasContentURI) {
-            items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyAnimationURL, value: tokenMetadataItem.contentURI, quote: false });
+            items[3] = MetadataBuilder.JSONItem({ key: MetadataJSONKeys.keyAnimationURL, value: tokenMetadataItem.contentURI, quote: true });
         }
 
         uint256 baseIndex = hasContentURI ? 4 : 3;

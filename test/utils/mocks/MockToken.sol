@@ -6,4 +6,8 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockToken is ERC721, Ownable {
     constructor(address owner) ERC721("Mock Token", "MOCK") Ownable(owner) {}
+
+    function totalSupply() external pure returns (uint256) {
+        return 20;
+    }
 }
