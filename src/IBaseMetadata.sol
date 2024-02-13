@@ -21,6 +21,12 @@ interface IBaseMetadata {
     /// @notice Additional token properties have been set
     event AdditionalTokenPropertiesSet(AdditionalTokenProperty[] _additionalJsonProperties);
 
+    /// @notice This event emits when the metadata of a token is changed.
+    event MetadataUpdate(uint256 _tokenId);
+
+    /// @notice This event emits when the metadata of a range of tokens is changed.
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+
     ///                                                          ///
     ///                            ERRORS                        ///
     ///                                                          ///

@@ -58,7 +58,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
     ///                                                          ///
 
     /// @param _manager The contract upgrade manager address
-    constructor(address _manager) payable {
+    constructor(address _manager) payable initializer {
         manager = _manager;
     }
 
@@ -352,7 +352,7 @@ contract PropertyIPFS is IPropertyIPFS, BaseMetadata, UUPSUpgradeable {
 
     /// @dev Generates a psuedo-random seed for a token id
     function _generateSeed(uint256 _tokenId) private view returns (uint256) {
-        return uint256(keccak256(abi.encode(_tokenId, blockhash(block.number), block.coinbase, block.timestamp)));
+        return uint256(keccak256(abi.encode(_tokenId, blockhash(block.number - 1), block.prevrandao, block.timestamp)));
     }
 
     /// @dev Encodes the reference URI of an item

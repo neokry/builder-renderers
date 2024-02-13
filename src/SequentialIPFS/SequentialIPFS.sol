@@ -109,7 +109,22 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
     /// @param _index The index to use
     /// @param _imageURI The metadata image URI
     /// @param _contentURI The metadata content URI
-    function _setMetadataItem(uint256 _index, string calldata _imageURI, string calldata _contentURI) internal {
+    function _setMetadataItem(uint256 _index, string memory _imageURI, string memory _contentURI) internal {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        MetadataItem storage item = $._metadataItems[_index];
+        item.imageURI = _imageURI;
+        item.contentURI = _contentURI;
+
+        if (!item.active) {
+            item.active = true;
+        }
+    }
+
+    /// @notice Set a metadata item at a specific index
+    /// @param _index The index to use
+    /// @param _imageURI The metadata image URI
+    /// @param _contentURI The metadata content URI
+    function _setMetadataItemCalldata(uint256 _index, string calldata _imageURI, string calldata _contentURI) internal {
         SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
         MetadataItem storage item = $._metadataItems[_index];
         item.imageURI = _imageURI;
@@ -123,7 +138,16 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
     /// @notice Sets the fallback metadata item
     /// @param _imageURI The metadata image URI
     /// @param _contentURI The metadata content URI
-    function _setFallbackMetadataItem(string calldata _imageURI, string calldata _contentURI) internal {
+    function _setFallbackMetadataItem(string memory _imageURI, string memory _contentURI) internal {
+        SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
+        $._fallbackMetadataItem.imageURI = _imageURI;
+        $._fallbackMetadataItem.contentURI = _contentURI;
+    }
+
+    /// @notice Sets the fallback metadata item
+    /// @param _imageURI The metadata image URI
+    /// @param _contentURI The metadata content URI
+    function _setFallbackMetadataItemCalldata(string calldata _imageURI, string calldata _contentURI) internal {
         SequentialIPFSStorage storage $ = _getSequentialIPFSStorage();
         $._fallbackMetadataItem.imageURI = _imageURI;
         $._fallbackMetadataItem.contentURI = _contentURI;
@@ -188,5 +212,15 @@ abstract contract SequentialIPFS is ISequentialIPFS, BaseMetadata, UUPSUpgradeab
 
     function _authorizeUpgrade(address _impl) internal virtual override onlyOwner {
         if (!IManager(manager).isRegisteredUpgrade(ERC1967Utils.getImplementation(), _impl)) revert INVALID_UPGRADE(_impl);
+    }
+
+    ///                                                          ///
+    ///                        SUPPORTS INTERFACE                ///
+    ///                                                          ///
+
+    /// @notice If the contract implements an interface
+    /// @param _interfaceId The interface id
+    function supportsInterface(bytes4 _interfaceId) public pure virtual override returns (bool) {
+        return super.supportsInterface(_interfaceId) || _interfaceId == type(ISequentialIPFS).interfaceId;
     }
 }

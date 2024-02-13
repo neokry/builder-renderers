@@ -3,14 +3,13 @@ pragma solidity ^0.8.20;
 
 import { ICreatorSequentialIPFS } from "./ICreatorSequentialIPFS.sol";
 import { SequentialIPFS } from "../SequentialIPFS/SequentialIPFS.sol";
-import { IUpdatableMetadata } from "../lib/interfaces/IUpdatableMetadata.sol";
 import { IToken } from "../lib/interfaces/IToken.sol";
 
 /// @title Creator Sequential IPFS Metadata Renderer
 /// @author Neokry
 /// @notice A property metadata renderer that allows a creator to set metadata items
 /// @custom:repo github.com/neokry/builder-renderers
-contract CreatorSequentialIPFS is IUpdatableMetadata, ICreatorSequentialIPFS, SequentialIPFS {
+contract CreatorSequentialIPFS is ICreatorSequentialIPFS, SequentialIPFS {
     ///                                                          ///
     ///                          STRUCTS                         ///
     ///                                                          ///
@@ -69,6 +68,14 @@ contract CreatorSequentialIPFS is IUpdatableMetadata, ICreatorSequentialIPFS, Se
         emit MetadataUpdate(_index);
     }
 
+    /// @notice Sets a metadata item at a specific index
+    /// @param _imageURI The metadata image URI
+    function setMetadataImageURI(uint256 _index, string calldata _imageURI) external onlyCreator {
+        _setMetadataItem(_index, _imageURI, "");
+
+        emit MetadataUpdate(_index);
+    }
+
     /// @notice Sets many metadata items at specific indexes
     /// @param _indexes The indexes to use
     /// @param _imageURIs The metadata image URIs
@@ -102,7 +109,23 @@ contract CreatorSequentialIPFS is IUpdatableMetadata, ICreatorSequentialIPFS, Se
     function setFallbackMetadataItem(string calldata _imageURI, string calldata _contentURI) external onlyCreator {
         _setFallbackMetadataItem(_imageURI, _contentURI);
 
-        emit BatchMetadataUpdate(0, IToken(token()).totalSupply() - 1);
+        uint256 totalSupply = IToken(token()).totalSupply();
+
+        if (totalSupply > 0) {
+            emit BatchMetadataUpdate(0, IToken(token()).totalSupply() - 1);
+        }
+    }
+
+    /// @notice Sets the fallback metadata item
+    /// @param _imageURI The metadata image URI
+    function setFallbackMetadataImageURI(string calldata _imageURI) external onlyCreator {
+        _setFallbackMetadataItem(_imageURI, "");
+
+        uint256 totalSupply = IToken(token()).totalSupply();
+
+        if (totalSupply > 0) {
+            emit BatchMetadataUpdate(0, IToken(token()).totalSupply() - 1);
+        }
     }
 
     /// @notice sets the creator
@@ -113,6 +136,10 @@ contract CreatorSequentialIPFS is IUpdatableMetadata, ICreatorSequentialIPFS, Se
         emit CreatorSet(_newCreator);
     }
 
+    function getCreator() external pure returns (address) {
+        return _creator();
+    }
+
     function _creator() internal pure returns (address creator) {
         CreatorSequentialIPFSStorage memory $ = _getCreatorSequentialIPFSStorage();
         creator = $._creator;
@@ -121,5 +148,15 @@ contract CreatorSequentialIPFS is IUpdatableMetadata, ICreatorSequentialIPFS, Se
     function _setCreator(address _newCreator) internal {
         CreatorSequentialIPFSStorage storage $ = _getCreatorSequentialIPFSStorage();
         $._creator = _newCreator;
+    }
+
+    ///                                                          ///
+    ///                        SUPPORTS INTERFACE                ///
+    ///                                                          ///
+
+    /// @notice If the contract implements an interface
+    /// @param _interfaceId The interface id
+    function supportsInterface(bytes4 _interfaceId) public pure override returns (bool) {
+        return super.supportsInterface(_interfaceId) || _interfaceId == type(ICreatorSequentialIPFS).interfaceId;
     }
 }

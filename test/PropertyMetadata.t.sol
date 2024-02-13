@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { PropertyIPFS, IPropertyIPFS } from "../src/PropertyIPFS/PropertyIPFS.sol";
 import { IBaseMetadata } from "../src/IBaseMetadata.sol";
 import { MockToken } from "./utils/mocks/MockToken.sol";
@@ -20,7 +21,8 @@ contract PropertyMetadataTest is PropertyIPFSTest {
         owner = address(0xB0B);
         manager = address(0x4A4A6E6);
 
-        metadata = new PropertyIPFS(manager);
+        address metadataImpl = address(new PropertyIPFS(manager));
+        metadata = PropertyIPFS(address(new ERC1967Proxy(metadataImpl, "")));
         token = new MockToken(owner);
 
         setMockInitStrings();
@@ -204,7 +206,7 @@ contract PropertyMetadataTest is PropertyIPFSTest {
             {
                 "name": "Mock Token #0",
                 "description": "This is a mock token",
-                "image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json",
+                "image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json",
                 "properties": {
                     "mock-property": "mock-item"
                 },
@@ -217,7 +219,7 @@ contract PropertyMetadataTest is PropertyIPFSTest {
         string memory json = Base64URIDecoder.decodeURI("data:application/json;base64,", metadata.tokenURI(0));
         assertEq(
             json,
-            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"},"testing": "HELLO","participationAgreement": "This is a JSON quoted participation agreement."}'
+            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"},"testing": "HELLO","participationAgreement": "This is a JSON quoted participation agreement."}'
         );
     }
 
@@ -259,7 +261,7 @@ contract PropertyMetadataTest is PropertyIPFSTest {
         // Ensure no additional properties are sent
         assertEq(
             json,
-            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"}}'
+            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"}}'
         );
 
         assertTrue(keccak256(bytes(withAdditionalTokenProperties)) != keccak256(bytes(metadata.tokenURI(0))));
@@ -300,12 +302,12 @@ contract PropertyMetadataTest is PropertyIPFSTest {
 
         // Ensure no additional properties are sent
 
-        // result: {"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json","properties": {"mock-⌐ ◨-◨-.∆property": " ⌐◨-◨ "}}
+        // result: {"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json","properties": {"mock-⌐ ◨-◨-.∆property": " ⌐◨-◨ "}}
         // JSON parse:
         // {
         //   name: 'Mock Token #0',
         //   description: 'This is a mock token',
-        //   image: 'http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json',
+        //   image: 'http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json',
         //   properties: { 'mock-⌐ ◨-◨-.∆property': ' ⌐◨-◨ ' }
         // }
         // > decodeURIComponent('https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json')
@@ -315,7 +317,7 @@ contract PropertyMetadataTest is PropertyIPFSTest {
 
         assertEq(
             json,
-            unicode'{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json","properties": {"mock-⌐ ◨-◨-.∆property": " ⌐◨-◨ "}}'
+            unicode'{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-%e2%8c%90%20%e2%97%a8-%e2%97%a8-.%e2%88%86property%2f%20%e2%8c%90%e2%97%a8-%e2%97%a8%20.json","properties": {"mock-⌐ ◨-◨-.∆property": " ⌐◨-◨ "}}'
         );
 
         assertTrue(keccak256(bytes(withAdditionalTokenProperties)) != keccak256(bytes(metadata.tokenURI(0))));
@@ -354,7 +356,7 @@ contract PropertyMetadataTest is PropertyIPFSTest {
 
         assertEq(
             json,
-            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"}}'
+            '{"name": "Mock Token #0","description": "This is a mock token","image": "http://localhost:5000/render?contractAddress=0x2e234dae75c793f67a35089c9d99245e1c58470b&tokenId=0&images=https%3a%2f%2fnouns.build%2fapi%2ftest%2fmock-property%2fmock-item.json","properties": {"mock-property": "mock-item"}}'
         );
     }
 }

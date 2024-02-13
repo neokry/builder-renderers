@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { MerklePropertyIPFS, IMerklePropertyIPFS } from "../src/MerklePropertyIPFS/MerklePropertyIPFS.sol";
 import { IPropertyIPFS } from "../src/PropertyIPFS/PropertyIPFS.sol";
 import { MockToken } from "./utils/mocks/MockToken.sol";
@@ -20,7 +21,9 @@ contract MerklePropertyMetadataTest is PropertyIPFSTest {
         owner = address(0xB0B);
         manager = address(0x4A4A6E6);
 
-        metadata = new MerklePropertyIPFS(manager);
+        address metadataImpl = address(new MerklePropertyIPFS(manager));
+        metadata = MerklePropertyIPFS(address(new ERC1967Proxy(metadataImpl, "")));
+
         token = new MockToken(owner);
 
         setMockInitStrings();
